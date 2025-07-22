@@ -52,6 +52,54 @@ function Faults() {
     fetchFaults();
   }, []);
 
+  const formatDuration = (durationString) => {
+    if (!durationString) return "N/A";
+    const date = new Date(durationString);
+
+    // Get total milliseconds since midnight
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+    return `${hours}:${minutes}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid Date";
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  };
+
+  const calculateFaultDuration = (row) => {
+    const status =
+      row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+    const handover = new Date(row["Date & Time of Handover of fault"]);
+    let end;
+
+    if (status === "restored") {
+      end = new Date(row["Date & Time of fault clearance"]);
+    } else {
+      end = new Date(); // current time
+    }
+
+    const diffMs = end - handover;
+    if (isNaN(diffMs)) return "Invalid";
+
+    const totalMinutes = Math.floor(diffMs / 1000 / 60);
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const minutes = String(totalMinutes % 60).padStart(2, "0");
+
+    return `${hours}:${minutes}`;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -59,7 +107,15 @@ function Faults() {
 
   const validateForm = () => {
     for (const key of REQUIRED_FIELDS) {
-      if (!formData[key]) return false;
+      const value = formData[key];
+      if (
+        !value ||
+        value.trim() === "" ||
+        (key === "Route name as per Transnet (from Point A to B)" &&
+          value.trim() === "0")
+      ) {
+        return false;
+      }
     }
     return true;
   };
@@ -161,42 +217,69 @@ function Faults() {
       ) : !faults.length ? (
         <p>No faults found.</p>
       ) : (
-        faults.map((row, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              marginBottom: "10px",
-              borderRadius: "8px",
-              backgroundColor: "#221e1eff",
-              color: "white",
-            }}
-          >
-            <p>
-              <strong>Route:</strong>{" "}
-              {row["Route name as per Transnet (from Point A to B)"]}
-            </p>
-            <p>
-              <strong>Fault durration:</strong>{" "}
-              {row["Fault durration (Hrs)"] || "N/A"}
-            </p>
-            <p>
-              <strong>Fault in Date & Time:</strong>{" "}
-              {row["Fault in Date & Time"] || "N/A"}
-            </p>
-            <p>
-              <strong>Status of fault(carried forward/ restored):</strong>{" "}
-              {row["Status of fault(carried forward/ restored)"] || "N/A"}
-            </p>
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <button onClick={() => handleEdit(index)}>Edit</button>
-              <button onClick={() => handleDelete(row.rowNumber)}>
-                Delete
-              </button>
+        faults.map((row, index) => {
+          const status =
+            row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          let headerColor = "#7f8c8d"; // default gray
+
+          if (status === "restored") headerColor = "#2ecc71"; // green
+          else if (status === "carried forward") headerColor = "#e74c3c"; // red
+
+          return (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                marginBottom: "15px",
+                overflow: "hidden",
+                backgroundColor: "#221e1eff",
+                color: "white",
+              }}
+            >
+              {/* Card Header */}
+              <div
+                style={{
+                  backgroundColor: headerColor,
+                  padding: "10px",
+                }}
+              >
+                <strong>
+                  {row["Route name as per Transnet (from Point A to B)"] ||
+                    "Unnamed Route"}
+                </strong>
+              </div>
+
+              {/* Card Content */}
+              <div style={{ padding: "10px" }}>
+                <p>
+                  <strong>Date & Time of Handover of fault:</strong>{" "}
+                  {formatDate(row["Date & Time of Handover of fault"]) || "N/A"}
+                </p>
+                <p>
+                  <strong>Fault Duration (HH:MM):</strong>{" "}
+                  {calculateFaultDuration(row)}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {row["Status of fault(carried forward/ restored)"] || "N/A"}
+                </p>
+                <p>
+                  <strong>FRT worked:</strong> {row["FRT worked"] || "N/A"}
+                </p>
+
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button onClick={() => handleEdit(index)}>Edit</button>
+                  <button onClick={() => handleDelete(row.rowNumber)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
