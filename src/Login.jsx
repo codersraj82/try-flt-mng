@@ -1,10 +1,10 @@
-// src/Login.jsx
 import React, { useState } from "react";
 import {
   GoogleOAuthProvider,
   useGoogleLogin,
   googleLogout,
 } from "@react-oauth/google";
+import Faults from "./Faults"; // Import the Faults component
 
 const clientId =
   "260551266904-s5p0g8452l1ldhnu084g5ckvn4s4ai1h.apps.googleusercontent.com";
@@ -54,16 +54,19 @@ function Login() {
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
       {user ? (
-        <div>
-          <p>Welcome, {user.name}</p>
-          <img
-            src={user.picture}
-            alt="User"
-            style={{ borderRadius: "50%", width: "60px" }}
-          />
-          <p>Email: {user.email}</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
+        <>
+          <div>
+            <p>Welcome, {user.name}</p>
+            <img
+              src={user.picture}
+              alt="User"
+              style={{ borderRadius: "50%", width: "60px" }}
+            />
+            <p>Email: {user.email}</p>
+            <button onClick={handleLogout}>Logout</button>
+          </div>
+          <Faults /> {/* Render Faults below profile */}
+        </>
       ) : (
         <button onClick={() => login()}>Login with Google</button>
       )}
