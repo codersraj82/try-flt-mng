@@ -8,17 +8,17 @@ const REQUIRED_FIELDS = [
 ];
 
 const initialFormData = {
-  "Transnet DOCKET NO": "",
-  "Route ID (Transnet ID)": "",
   "Route name as per Transnet (from Point A to B)": "",
   "Fault in Date & Time": "",
   "Date & Time of Handover of fault": "",
-  "Date & Time of fault clearance": "",
   "Fault durration (Hrs)": "",
+  "Nature of Fault": "",
+  "Name of field staff attended the fault": "",
+  "Fault restored by": "",
+  "Restored Date & Time": "",
+  Remarks: "",
   "Status of fault(carried forward/ restored)": "",
-  "Initial assesment (brief details of the issue)": "",
-  "List of service down due to fault": "",
-  "FRT worked": "",
+  rowNumber: null,
 };
 
 function Faults() {
