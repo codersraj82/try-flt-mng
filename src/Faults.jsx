@@ -30,13 +30,27 @@ function Faults() {
   const apiUrl = "/.netlify/functions/fetchFaults";
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch("/.netlify/functions/fetchFaults");
-      const faults = await res.json();
-      console.log("Fetched from sheet:", faults);
-    };
+    async function fetchFaults() {
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        console.log("Fetched faults:", data);
 
-    fetchData();
+        const filtered = (data.faults || []).filter(
+          (row) =>
+            row["Route name as per Transnet (from Point A to B)"] &&
+            row["Fault in Date & Time"] &&
+            row["Status of fault(carried forward/ restored)"]
+        );
+        setFaults(filtered);
+      } catch (error) {
+        console.error("Error fetching faults:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFaults();
   }, []);
 
   const formatDuration = (durationString) => {
