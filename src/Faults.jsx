@@ -27,7 +27,7 @@ function Faults() {
   const [formData, setFormData] = useState(initialFormData);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  const apiUrl = "../.netlify/functions/fetchFaults";
+  const apiUrl = "/.netlify/functions/fetchFaults";
 
   useEffect(() => {
     async function fetchFaults() {
