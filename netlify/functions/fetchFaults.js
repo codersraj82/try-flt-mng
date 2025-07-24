@@ -1,9 +1,13 @@
 export async function handler(event, context) {
+  const url = process.env.SHEET_WEBAPP_URL;
+
   try {
-    // Your logic here
+    const res = await fetch(url);
+    const data = await res.json();
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Function running fine" }),
+      body: JSON.stringify(data), // ✅ Must be array of faults
     };
   } catch (err) {
     return {
