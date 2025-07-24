@@ -34,7 +34,7 @@ function Faults() {
       try {
         const response = await fetch(apiUrl);
         const data = await response.json();
-        const filtered = data.filter(
+        const filtered = (data.faults || []).filter(
           (row) =>
             row["Route name as per Transnet (from Point A to B)"] &&
             row["Fault in Date & Time"] &&
