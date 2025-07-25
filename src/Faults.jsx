@@ -198,8 +198,13 @@ function Faults() {
                 >
                   <option value="">-- Select Route --</option>
                   {routes.map((route, idx) => (
-                    <option key={idx} value={route}>
-                      {route}
+                    <option
+                      key={idx}
+                      value={
+                        route["Route name as per Transnet (from Point A to B)"]
+                      }
+                    >
+                      {route["Route name as per Transnet (from Point A to B)"]}
                     </option>
                   ))}
                 </select>
