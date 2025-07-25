@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const apiUrl = "/.netlify/functions/fetchFault"; // Make sure this matches your Netlify function route
+const apiUrl = "/.netlify/functions/fetchFaults"; // Make sure this matches your Netlify function route
 
 const Faults = () => {
   const [faults, setFaults] = useState([]);
