@@ -17,6 +17,12 @@ const Faults = () => {
           fetch(`${apiUrl}?type=routes`),
         ]);
 
+        if (!faultsRes.ok || !routesRes.ok) {
+          throw new Error(
+            `HTTP error: ${faultsRes.status}, ${routesRes.status}`
+          );
+        }
+
         const faultsData = await faultsRes.json();
         const routesData = await routesRes.json();
 
