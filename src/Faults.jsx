@@ -25,7 +25,9 @@ const initialFormData = {
   "FRT worked": "",
 };
 
-const apiUrl = "/.netlify/functions/fetchFaults";
+// const apiUrl = "/.netlify/functions/fetchFaults";
+const apiUrl =
+  "https://script.google.com/macros/s/PASTE_YOUR_SCRIPT_ID_HERE/exec";
 
 function Faults() {
   const [faults, setFaults] = useState([]);
