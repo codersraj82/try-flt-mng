@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
-import fetchFaults from "../netlify/functions/fetchFaults";
-import fetchRoutes from "../netlify/functions/fetchFaults";
+import fetchFaults from "../api/fetchFaults";
+import fetchRoutes from "../api/fetchRoutes";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
