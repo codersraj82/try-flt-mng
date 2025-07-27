@@ -170,27 +170,29 @@ function Faults() {
     }
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch("/.netlify/functions/submitFault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const updated = await response.json();
-      if (formData.rowNumber) {
-        setFaults((prev) =>
-          prev.map((row) =>
-            row.rowNumber === formData.rowNumber ? updated : row
-          )
-        );
-      } else {
-        setFaults((prev) => [...prev, updated]);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        console.error("Submission failed:", result);
+        alert("Failed to submit fault.");
+        return;
       }
 
+      // Optionally add the new row to the UI immediately
+      setFaults((prev) => [...prev, formData]);
+
+      // Reset form after successful submission
       setFormData(initialFormData);
       setEditingIndex(null);
     } catch (error) {
       console.error("Error submitting fault:", error);
+      alert("Error submitting fault.");
     }
   };
 
