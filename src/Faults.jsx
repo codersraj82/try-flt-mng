@@ -111,31 +111,41 @@ function Faults() {
     }));
   };
   useEffect(() => {
-    const start = formData["Date & Time of Handover of fault"];
-    const end = formData["Date & Time of fault clearance"];
+    const startRaw = formData["Date & Time of Handover of fault"];
+    const endRaw = formData["Date & Time of fault clearance"];
     const status =
       formData["Status of fault(carried forward/ restored)"]?.toLowerCase();
 
-    if (start) {
-      const startTime = new Date(start);
-      const endTime = status === "restored" && end ? new Date(end) : new Date();
-
-      const minutes = differenceInMinutes(endTime, startTime);
-      if (!isNaN(minutes)) {
-        const days = Math.floor(minutes / 1440);
-        const hours = String(Math.floor((minutes % 1440) / 60)).padStart(
-          2,
-          "0"
-        );
-        const mins = String(minutes % 60).padStart(2, "0");
-
-        const duration = `${days}d ${hours}:${mins}`;
-        setFormData((prev) => ({
-          ...prev,
-          "Fault durration (Hrs)": duration,
-        }));
-      }
+    if (!startRaw) {
+      setFormData((prev) => ({
+        ...prev,
+        "Fault durration (Hrs)": "",
+      }));
+      return;
     }
+
+    const start = new Date(startRaw);
+    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+
+    if (isNaN(start) || isNaN(end)) {
+      setFormData((prev) => ({
+        ...prev,
+        "Fault durration (Hrs)": "",
+      }));
+      return;
+    }
+
+    const minutes = differenceInMinutes(end, start);
+    const days = Math.floor(minutes / 1440);
+    const hours = String(Math.floor((minutes % 1440) / 60)).padStart(2, "0");
+    const mins = String(minutes % 60).padStart(2, "0");
+
+    const duration = `${days}d ${hours}:${mins}`;
+
+    setFormData((prev) => ({
+      ...prev,
+      "Fault durration (Hrs)": duration,
+    }));
   }, [
     formData["Date & Time of Handover of fault"],
     formData["Date & Time of fault clearance"],
