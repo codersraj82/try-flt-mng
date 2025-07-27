@@ -80,12 +80,11 @@ function Faults() {
 
   const calculateFaultDuration = (row) => {
     const start = new Date(row["Date & Time of Handover of fault"]);
+    const endRaw = row["Date & Time of fault clearance"];
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-    const end =
-      status === "restored"
-        ? new Date(row["Date & Time of fault clearance"])
-        : new Date();
+
+    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date(); // Use current time if not cleared
 
     const totalMinutes = differenceInMinutes(end, start);
     if (isNaN(totalMinutes)) return "Invalid";
