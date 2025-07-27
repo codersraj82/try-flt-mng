@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { format, differenceInMinutes } from "date-fns";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -25,7 +22,7 @@ const initialFormData = {
   "FRT worked": "",
 };
 
-const apiUrl = "/.netlify/functions/fetchFaults";
+const apiUrl = "/.netlify/functions/fetchFaults"; // MATCHING FUNCTION NAME
 
 function Faults() {
   const [faults, setFaults] = useState([]);
@@ -75,29 +72,32 @@ function Faults() {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return format(date, "dd/MM/yyyy HH:mm");
+    if (isNaN(date.getTime())) return "Invalid Date";
+    return `${date.getDate().toString().padStart(2, "0")}-${(
+      date.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}-${date.getFullYear()} ${date
+      .getHours()
+      .toString()
+      .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
   };
 
   const calculateFaultDuration = (row) => {
-    const start = new Date(row["Date & Time of Handover of fault"]);
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-    const end =
+    const handover = new Date(row["Date & Time of Handover of fault"]);
+    let end =
       status === "restored"
         ? new Date(row["Date & Time of fault clearance"])
         : new Date();
 
-    const totalMinutes = differenceInMinutes(end, start);
-    if (isNaN(totalMinutes)) return "Invalid";
-
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = String(Math.floor((totalMinutes % 1440) / 60)).padStart(
-      2,
-      "0"
-    );
+    const diffMs = end - handover;
+    if (isNaN(diffMs)) return "Invalid";
+    const totalMinutes = Math.floor(diffMs / 1000 / 60);
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
     const minutes = String(totalMinutes % 60).padStart(2, "0");
-
-    return `${days}d ${hours}:${minutes}`;
+    return `${hours}:${minutes}`;
   };
 
   const handleChange = (e) => {
@@ -105,15 +105,11 @@ function Faults() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (key, date) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: date ? new Date(date).toISOString() : "",
-    }));
-  };
-
   const validateForm = () => {
-    return REQUIRED_FIELDS.every((key) => formData[key]?.trim());
+    for (const key of REQUIRED_FIELDS) {
+      if (!formData[key] || formData[key].trim() === "") return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -200,7 +196,10 @@ function Faults() {
                   }))}
                   value={
                     formData[key]
-                      ? { label: formData[key], value: formData[key] }
+                      ? {
+                          label: formData[key],
+                          value: formData[key],
+                        }
                       : null
                   }
                   onChange={(selectedOption) =>
@@ -210,22 +209,14 @@ function Faults() {
                     }))
                   }
                   isClearable
-                />
-              ) : [
-                  "Fault in Date & Time",
-                  "Date & Time of Handover of fault",
-                  "Date & Time of fault clearance",
-                ].includes(key) ? (
-                <DatePicker
-                  selected={formData[key] ? new Date(formData[key]) : null}
-                  onChange={(date) => handleDateChange(key, date)}
-                  showTimeSelect
-                  timeFormat="HH:mm"
-                  timeIntervals={15}
-                  dateFormat="dd/MM/yyyy HH:mm"
-                  placeholderText="Select date & time"
-                  className="form-control"
-                  wrapperClassName="date-picker-wrapper"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      backgroundColor: "#fff",
+                      color: "#000",
+                      borderRadius: "5px",
+                    }),
+                  }}
                 />
               ) : (
                 <input
@@ -276,12 +267,18 @@ function Faults() {
                 color: "white",
               }}
             >
-              <div style={{ backgroundColor: headerColor, padding: "10px" }}>
+              <div
+                style={{
+                  backgroundColor: headerColor,
+                  padding: "10px",
+                }}
+              >
                 <strong>
                   {row["Route name as per Transnet (from Point A to B)"] ||
                     "Unnamed Route"}
                 </strong>
               </div>
+
               <div style={{ padding: "10px" }}>
                 <p>
                   <strong>Handover Time:</strong>{" "}
@@ -297,6 +294,7 @@ function Faults() {
                 <p>
                   <strong>FRT Worked:</strong> {row["FRT worked"]}
                 </p>
+
                 <div
                   style={{ display: "flex", gap: "10px", marginTop: "10px" }}
                 >
