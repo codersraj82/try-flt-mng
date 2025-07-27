@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Select from "react-select";
-import fetchFaults from "../api/fetchFaults";
-import fetchRoutes from "../api/fetchRoutes";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -12,159 +9,297 @@ const REQUIRED_FIELDS = [
 
 const initialFormData = {
   "Transnet DOCKET NO": "",
+  "Route ID (Transnet ID)": "",
   "Route name as per Transnet (from Point A to B)": "",
   "Fault in Date & Time": "",
   "Date & Time of Handover of fault": "",
+  "Date & Time of fault clearance": "",
+  "Fault durration (Hrs)": "",
   "Status of fault(carried forward/ restored)": "",
-  Remarks: "",
+  "Initial assesment (brief details of the issue)": "",
+  "List of service down due to fault": "",
+  "FRT worked": "",
 };
 
-const Faults = () => {
+const apiUrl = "/.netlify/functions/fetchFaults"; // MATCHING FUNCTION NAME
+
+function Faults() {
   const [faults, setFaults] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialFormData);
-  const [error, setError] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
 
   useEffect(() => {
-    const loadData = async () => {
+    async function fetchData() {
       try {
-        const faultData = await fetchFaults();
-        const routeData = await fetchRoutes();
-        setFaults(faultData);
-        setRoutes(routeData);
-      } catch (err) {
-        setError("Failed to fetch fault or route data");
-        console.error("Error fetching fault or route data:", err);
+        const [faultsRes, routesRes] = await Promise.all([
+          fetch(apiUrl),
+          fetch(`${apiUrl}?type=routes`),
+        ]);
+
+        if (!faultsRes.ok || !routesRes.ok) {
+          throw new Error(
+            `HTTP error: ${faultsRes.status}, ${routesRes.status}`
+          );
+        }
+
+        const faultsData = await faultsRes.json();
+        const routesData = await routesRes.json();
+
+        const filteredFaults = (
+          Array.isArray(faultsData.data) ? faultsData.data : []
+        ).filter(
+          (row) =>
+            row["Route name as per Transnet (from Point A to B)"] &&
+            row["Fault in Date & Time"] &&
+            row["Status of fault(carried forward/ restored)"]
+        );
+
+        setFaults(filteredFaults);
+        setRoutes(Array.isArray(routesData.data) ? routesData.data : []);
+      } catch (error) {
+        console.error("Error fetching fault or route data:", error);
+      } finally {
+        setLoading(false);
       }
-    };
-    loadData();
+    }
+
+    fetchData();
   }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid Date";
+    return `${date.getDate().toString().padStart(2, "0")}-${(
+      date.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}-${date.getFullYear()} ${date
+      .getHours()
+      .toString()
+      .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  const calculateFaultDuration = (row) => {
+    const status =
+      row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+    const handover = new Date(row["Date & Time of Handover of fault"]);
+    let end =
+      status === "restored"
+        ? new Date(row["Date & Time of fault clearance"])
+        : new Date();
+
+    const diffMs = end - handover;
+    if (isNaN(diffMs)) return "Invalid";
+    const totalMinutes = Math.floor(diffMs / 1000 / 60);
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const minutes = String(totalMinutes % 60).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    for (const key of REQUIRED_FIELDS) {
+      if (!formData[key] || formData[key].trim() === "") return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const updated = await response.json();
+      if (formData.rowNumber) {
+        setFaults((prev) =>
+          prev.map((row) =>
+            row.rowNumber === formData.rowNumber ? updated : row
+          )
+        );
+      } else {
+        setFaults((prev) => [...prev, updated]);
+      }
+
+      setFormData(initialFormData);
+      setEditingIndex(null);
+    } catch (error) {
+      console.error("Error submitting fault:", error);
+    }
+  };
+
+  const handleEdit = (index) => {
+    setFormData({ ...faults[index] });
+    setEditingIndex(index);
+    window.scrollTo(0, 0);
+  };
+
+  const handleDelete = async (rowNumber) => {
+    if (!window.confirm("Are you sure to delete this fault?")) return;
+
+    try {
+      await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rowNumber, action: "delete" }),
+      });
+
+      setFaults((prev) => prev.filter((row) => row.rowNumber !== rowNumber));
+    } catch (error) {
+      console.error("Delete failed", error);
+    }
   };
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <h2 style={{ textAlign: "center" }}>Fault Reporting</h2>
-
-      {/* Form */}
-      <form style={{ marginBottom: "2rem" }}>
-        {Object.keys(formData).map((key) => (
-          <div key={key} style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              {key}{" "}
-              {REQUIRED_FIELDS.includes(key) && (
-                <span style={{ color: "red" }}>*</span>
-              )}
-            </label>
-
-            {key === "Route name as per Transnet (from Point A to B)" ? (
-              <Select
-                options={routes.map((route) => ({
-                  label:
-                    route["Route name as per Transnet (from Point A to B)"],
-                  value:
-                    route["Route name as per Transnet (from Point A to B)"],
-                }))}
-                value={
-                  formData[key]
-                    ? {
-                        label: formData[key],
-                        value: formData[key],
-                      }
-                    : null
-                }
-                onChange={(selectedOption) =>
-                  handleChange({
-                    target: {
-                      name: key,
-                      value: selectedOption ? selectedOption.value : "",
-                    },
-                  })
-                }
-                isClearable
-                placeholder="Select or search route..."
-                styles={{
-                  control: (provided) => ({
-                    ...provided,
-                    backgroundColor: "#fff",
+    <div style={{ marginTop: "40px", padding: "0 20px" }}>
+      <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
+      <div
+        style={{
+          backgroundColor: "#222",
+          padding: "15px",
+          borderRadius: "10px",
+          color: "white",
+          marginBottom: "20px",
+        }}
+      >
+        {Object.keys(initialFormData)
+          .filter((key) => key !== "rowNumber")
+          .map((key) => (
+            <div key={key} style={{ marginBottom: "10px" }}>
+              <label>
+                <strong>{key}</strong>
+              </label>
+              <br />
+              {key === "Route name as per Transnet (from Point A to B)" ? (
+                <select
+                  name={key}
+                  value={formData[key] || ""}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
                     borderRadius: "5px",
                     border: "1px solid #888",
-                    padding: "1px",
-                  }),
-                }}
-              />
-            ) : (
-              <input
-                type={
-                  key.toLowerCase().includes("date") ? "datetime-local" : "text"
-                }
-                name={key}
-                value={formData[key] || ""}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "5px",
-                  border: "1px solid #888",
-                }}
-              />
-            )}
-          </div>
-        ))}
-      </form>
+                  }}
+                >
+                  <option value="">-- Select Route --</option>
+                  {routes.map((route, idx) => (
+                    <option
+                      key={idx}
+                      value={
+                        route["Route name as per Transnet (from Point A to B)"]
+                      }
+                    >
+                      {route["Route name as per Transnet (from Point A to B)"]}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name={key}
+                  value={formData[key] || ""}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "5px",
+                    border: "1px solid #888",
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        <button onClick={handleSubmit} style={{ marginTop: "10px" }}>
+          {formData.rowNumber ? "Update" : "Add"} Fault
+        </button>
+      </div>
 
-      {/* Display Fault Cards */}
-      {error ? (
-        <p style={{ color: "red" }}>{error}</p>
+      <h2>Fault Records</h2>
+      {loading ? (
+        <p>Loading faults...</p>
+      ) : !faults.length ? (
+        <p>No faults found.</p>
       ) : (
-        faults
-          .sort((a, b) => {
-            const dateA = new Date(a["Fault in Date & Time"]);
-            const dateB = new Date(b["Fault in Date & Time"]);
-            return dateB - dateA;
-          })
-          .map((fault, index) => (
+        faults.map((row, index) => {
+          const status =
+            row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          const headerColor =
+            status === "restored"
+              ? "#2ecc71"
+              : status === "carried forward"
+              ? "#e74c3c"
+              : "#7f8c8d";
+
+          return (
             <div
-              key={fault.rowNumber || index}
+              key={index}
               style={{
                 border: "1px solid #ccc",
-                borderRadius: "5px",
-                padding: "1rem",
-                marginBottom: "1rem",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                borderRadius: "8px",
+                marginBottom: "15px",
+                overflow: "hidden",
+                backgroundColor: "#221e1eff",
+                color: "white",
               }}
             >
-              <h3 style={{ marginBottom: "0.5rem" }}>
-                {fault["Route name as per Transnet (from Point A to B)"]}
-              </h3>
-              <p>
-                <strong>DOCKET NO:</strong> {fault["Transnet DOCKET NO"]}
-              </p>
-              <p>
-                <strong>Fault in:</strong> {fault["Fault in Date & Time"]}
-              </p>
-              <p>
-                <strong>Handover:</strong>{" "}
-                {fault["Date & Time of Handover of fault"]}
-              </p>
-              <p>
-                <strong>Status:</strong>{" "}
-                {fault["Status of fault(carried forward/ restored)"]}
-              </p>
-              <p>
-                <strong>Remarks:</strong> {fault["Remarks"]}
-              </p>
-              <p>
-                <strong>Row #:</strong> {fault.rowNumber}
-              </p>
+              <div
+                style={{
+                  backgroundColor: headerColor,
+                  padding: "10px",
+                }}
+              >
+                <strong>
+                  {row["Route name as per Transnet (from Point A to B)"] ||
+                    "Unnamed Route"}
+                </strong>
+              </div>
+
+              <div style={{ padding: "10px" }}>
+                <p>
+                  <strong>Handover Time:</strong>{" "}
+                  {formatDate(row["Date & Time of Handover of fault"])}
+                </p>
+                <p>
+                  <strong>Fault Duration:</strong> {calculateFaultDuration(row)}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {row["Status of fault(carried forward/ restored)"]}
+                </p>
+                <p>
+                  <strong>FRT Worked:</strong> {row["FRT worked"]}
+                </p>
+
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button onClick={() => handleEdit(index)}>Edit</button>
+                  <button onClick={() => handleDelete(row.rowNumber)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
-          ))
+          );
+        })
       )}
     </div>
   );
-};
+}
 
 export default Faults;
