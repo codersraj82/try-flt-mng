@@ -25,9 +25,9 @@ const initialFormData = {
   "FRT worked": "",
 };
 
-// const apiUrl = "/.netlify/functions/fetchFaults";
-const apiUrl =
-  "https://script.google.com/macros/s/AKfycbyP6Wh0bGGq2IF-b9jv5qT729Ii02zA6aoEfWaXOwqplkl373dkIOGvYg_1AN1kkeD0yQ/exec";
+const apiUrl = "/.netlify/functions/fetchFaults";
+// const apiUrl =
+// "https://script.google.com/macros/s/AKfycbyP6Wh0bGGq2IF-b9jv5qT729Ii02zA6aoEfWaXOwqplkl373dkIOGvYg_1AN1kkeD0yQ/exec";
 
 function Faults() {
   const [faults, setFaults] = useState([]);
