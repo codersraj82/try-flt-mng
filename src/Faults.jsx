@@ -111,8 +111,8 @@ function Faults() {
     }));
   };
   useEffect(() => {
-    const startRaw = formData["Date & Time of Handover of fault"];
-    const endRaw = formData["Date & Time of fault clearance"];
+    const startRaw = formData["Date & Time of Handover of fault"]?.trim();
+    const endRaw = formData["Date & Time of fault clearance"]?.trim();
     const status =
       formData["Status of fault(carried forward/ restored)"]?.toLowerCase();
 
@@ -125,7 +125,12 @@ function Faults() {
     }
 
     const start = new Date(startRaw);
-    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+    const end =
+      status === "restored"
+        ? endRaw
+          ? new Date(endRaw)
+          : new Date()
+        : new Date();
 
     if (isNaN(start) || isNaN(end)) {
       setFormData((prev) => ({
