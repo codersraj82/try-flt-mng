@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -185,29 +186,38 @@ function Faults() {
               </label>
               <br />
               {key === "Route name as per Transnet (from Point A to B)" ? (
-                <select
+                <Select
                   name={key}
-                  value={formData[key] || ""}
-                  onChange={handleChange}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "5px",
-                    border: "1px solid #888",
+                  options={routes.map((route) => ({
+                    label:
+                      route["Route name as per Transnet (from Point A to B)"],
+                    value:
+                      route["Route name as per Transnet (from Point A to B)"],
+                  }))}
+                  value={
+                    formData[key]
+                      ? {
+                          label: formData[key],
+                          value: formData[key],
+                        }
+                      : null
+                  }
+                  onChange={(selectedOption) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [key]: selectedOption ? selectedOption.value : "",
+                    }))
+                  }
+                  isClearable
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      backgroundColor: "#fff",
+                      color: "#000",
+                      borderRadius: "5px",
+                    }),
                   }}
-                >
-                  <option value="">-- Select Route --</option>
-                  {routes.map((route, idx) => (
-                    <option
-                      key={idx}
-                      value={
-                        route["Route name as per Transnet (from Point A to B)"]
-                      }
-                    >
-                      {route["Route name as per Transnet (from Point A to B)"]}
-                    </option>
-                  ))}
-                </select>
+                />
               ) : (
                 <input
                   type="text"
