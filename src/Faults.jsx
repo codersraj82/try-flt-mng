@@ -188,7 +188,7 @@ function Faults() {
               {key === "Route name as per Transnet (from Point A to B)" ? (
                 <select
                   name={key}
-                  value={formData[key] || ""}
+                  value={formData[key] || "Select route"}
                   onChange={handleChange}
                 />
               ) : (
@@ -198,7 +198,7 @@ function Faults() {
                   value={formData[key] || ""}
                   onChange={handleChange}
                   style={{
-                    width: "100%",
+                    width: "300%",
                     padding: "8px",
                     borderRadius: "5px",
                     border: "1px solid #888",
