@@ -110,6 +110,37 @@ function Faults() {
       [key]: date ? new Date(date).toISOString() : "",
     }));
   };
+  useEffect(() => {
+    const start = formData["Date & Time of Handover of fault"];
+    const end = formData["Date & Time of fault clearance"];
+    const status =
+      formData["Status of fault(carried forward/ restored)"]?.toLowerCase();
+
+    if (start) {
+      const startTime = new Date(start);
+      const endTime = status === "restored" && end ? new Date(end) : new Date();
+
+      const minutes = differenceInMinutes(endTime, startTime);
+      if (!isNaN(minutes)) {
+        const days = Math.floor(minutes / 1440);
+        const hours = String(Math.floor((minutes % 1440) / 60)).padStart(
+          2,
+          "0"
+        );
+        const mins = String(minutes % 60).padStart(2, "0");
+
+        const duration = `${days}d ${hours}:${mins}`;
+        setFormData((prev) => ({
+          ...prev,
+          "Fault durration (Hrs)": duration,
+        }));
+      }
+    }
+  }, [
+    formData["Date & Time of Handover of fault"],
+    formData["Date & Time of fault clearance"],
+    formData["Status of fault(carried forward/ restored)"],
+  ]);
 
   const validateForm = () => {
     return REQUIRED_FIELDS.every((key) => formData[key]?.trim());
@@ -238,6 +269,7 @@ function Faults() {
                     borderRadius: "5px",
                     border: "1px solid #888",
                   }}
+                  disabled={key === "Fault durration (Hrs)"}
                 />
               )}
             </div>
