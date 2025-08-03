@@ -3,9 +3,7 @@ export async function handler(event, context) {
   const type = event.queryStringParameters?.type || "faults";
 
   // Append a query param to specify sheet tab, if your Apps Script endpoint supports it
-  let url = `${baseUrl}?sheet=${
-    type === "routes" ? "Route_Details" : "dly_rpt"
-  }`;
+  let url = `${baseUrl}?tab=${type === "routes" ? "Route_Details" : "dly_rpt"}`;
 
   try {
     const res = await fetch(url);
