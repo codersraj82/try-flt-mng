@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { format, differenceInMinutes, parse } from "date-fns";
+import { format, differenceInMinutes, parseISO } from "date-fns";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -27,17 +27,6 @@ const initialFormData = {
 
 const apiUrl = "/.netlify/functions/fetchFaults";
 
-const formatDateTimeForSheet = (value) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return isNaN(date) ? "" : format(date, "dd/MM/yyyy HH:mm");
-};
-
-const parseDateTimeFromSheet = (value) => {
-  if (!value || typeof value !== "string") return null;
-  const parsed = parse(value, "dd/MM/yyyy HH:mm", new Date());
-  return isNaN(parsed) ? null : parsed.toISOString();
-};
-
 function Faults() {
   const [faults, setFaults] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -53,18 +42,10 @@ function Faults() {
           fetch(`${apiUrl}?type=routes`),
         ]);
 
-        if (!faultsRes.ok || !routesRes.ok) {
-          throw new Error(
-            `HTTP error: ${faultsRes.status}, ${routesRes.status}`
-          );
-        }
-
         const faultsData = await faultsRes.json();
         const routesData = await routesRes.json();
 
-        const filteredFaults = (
-          Array.isArray(faultsData.data) ? faultsData.data : []
-        ).filter(
+        const filteredFaults = (faultsData.data || []).filter(
           (row) =>
             row["Route name as per Transnet (from Point A to B)"] &&
             row["Fault in Date & Time"] &&
@@ -74,7 +55,7 @@ function Faults() {
         setFaults(filteredFaults);
         setRoutes(Array.isArray(routesData.data) ? routesData.data : []);
       } catch (error) {
-        console.error("Error fetching fault or route data:", error);
+        console.error("Fetch error:", error);
       } finally {
         setLoading(false);
       }
@@ -83,9 +64,14 @@ function Faults() {
     fetchData();
   }, []);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
+  const formatDateForDisplay = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    return format(date, "dd/MM/yyyy HH:mm");
+  };
+
+  const formatDateForSheet = (dateStr) => {
+    const date = new Date(dateStr);
     return format(date, "dd/MM/yyyy HH:mm");
   };
 
@@ -94,19 +80,12 @@ function Faults() {
     const endRaw = row["Date & Time of fault clearance"];
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-
     const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
-    const totalMinutes = differenceInMinutes(end, start);
-    if (isNaN(totalMinutes)) return "Invalid";
-
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = String(Math.floor((totalMinutes % 1440) / 60)).padStart(
-      2,
-      "0"
-    );
-    const minutes = String(totalMinutes % 60).padStart(2, "0");
-
-    return `${days}d ${hours}:${minutes}`;
+    const minutes = differenceInMinutes(end, start);
+    const days = Math.floor(minutes / 1440);
+    const hours = String(Math.floor((minutes % 1440) / 60)).padStart(2, "0");
+    const mins = String(minutes % 60).padStart(2, "0");
+    return `${days}d ${hours}:${mins}`;
   };
 
   const handleChange = (e) => {
@@ -117,13 +96,13 @@ function Faults() {
   const handleDateChange = (key, date) => {
     setFormData((prev) => ({
       ...prev,
-      [key]: date ? new Date(date).toISOString() : "",
+      [key]: date ? date.toISOString() : "",
     }));
   };
 
   useEffect(() => {
-    const startRaw = formData["Date & Time of Handover of fault"]?.trim();
-    const endRaw = formData["Date & Time of fault clearance"]?.trim();
+    const startRaw = formData["Date & Time of Handover of fault"];
+    const endRaw = formData["Date & Time of fault clearance"];
     const status =
       formData["Status of fault(carried forward/ restored)"]?.toLowerCase();
 
@@ -136,7 +115,12 @@ function Faults() {
     }
 
     const start = new Date(startRaw);
-    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+    const end =
+      status === "restored"
+        ? endRaw
+          ? new Date(endRaw)
+          : new Date()
+        : new Date();
 
     if (isNaN(start) || isNaN(end)) {
       setFormData((prev) => ({
@@ -151,11 +135,9 @@ function Faults() {
     const hours = String(Math.floor((minutes % 1440) / 60)).padStart(2, "0");
     const mins = String(minutes % 60).padStart(2, "0");
 
-    const duration = `${days}d ${hours}:${mins}`;
-
     setFormData((prev) => ({
       ...prev,
-      "Fault durration (Hrs)": duration,
+      "Fault durration (Hrs)": `${days}d ${hours}:${mins}`,
     }));
   }, [
     formData["Date & Time of Handover of fault"],
@@ -173,18 +155,17 @@ function Faults() {
       return;
     }
 
-    const formattedData = {
-      ...formData,
-      "Fault in Date & Time": formatDateTimeForSheet(
-        formData["Fault in Date & Time"]
-      ),
-      "Date & Time of Handover of fault": formatDateTimeForSheet(
-        formData["Date & Time of Handover of fault"]
-      ),
-      "Date & Time of fault clearance": formatDateTimeForSheet(
-        formData["Date & Time of fault clearance"]
-      ),
-    };
+    // Format dates before sending to sheet
+    const formattedData = { ...formData };
+    [
+      "Fault in Date & Time",
+      "Date & Time of Handover of fault",
+      "Date & Time of fault clearance",
+    ].forEach((field) => {
+      if (formData[field]) {
+        formattedData[field] = formatDateForSheet(formData[field]);
+      }
+    });
 
     try {
       const response = await fetch("/.netlify/functions/submitFault", {
@@ -196,7 +177,7 @@ function Faults() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        console.error("Submission failed:", result);
+        console.error("Submit failed:", result);
         alert("Failed to submit fault.");
         return;
       }
@@ -204,25 +185,14 @@ function Faults() {
       setFaults((prev) => [...prev, formattedData]);
       setFormData(initialFormData);
       setEditingIndex(null);
-    } catch (error) {
-      console.error("Error submitting fault:", error);
-      alert("Error submitting fault.");
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error submitting data.");
     }
   };
 
   const handleEdit = (index) => {
-    const original = faults[index];
-    setFormData({
-      ...original,
-      "Fault in Date & Time":
-        parseDateTimeFromSheet(original["Fault in Date & Time"]) || "",
-      "Date & Time of Handover of fault":
-        parseDateTimeFromSheet(original["Date & Time of Handover of fault"]) ||
-        "",
-      "Date & Time of fault clearance":
-        parseDateTimeFromSheet(original["Date & Time of fault clearance"]) ||
-        "",
-    });
+    setFormData({ ...faults[index] });
     setEditingIndex(index);
     window.scrollTo(0, 0);
   };
@@ -245,8 +215,145 @@ function Faults() {
 
   return (
     <div style={{ marginTop: "40px", padding: "0 20px" }}>
-      {/* FORM and TABLE remains unchanged */}
-      {/* Your JSX for rendering stays the same */}
+      <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
+      <div
+        style={{
+          backgroundColor: "#222",
+          padding: "15px",
+          borderRadius: "10px",
+          color: "white",
+          marginBottom: "20px",
+        }}
+      >
+        {Object.keys(initialFormData)
+          .filter((key) => key !== "rowNumber")
+          .map((key) => (
+            <div key={key} style={{ marginBottom: "10px" }}>
+              <label>
+                <strong>{key}</strong>
+              </label>
+              <br />
+              {key === "Route name as per Transnet (from Point A to B)" ? (
+                <Select
+                  name={key}
+                  options={routes.map((r) => ({
+                    label: r[key],
+                    value: r[key],
+                  }))}
+                  value={
+                    formData[key]
+                      ? { label: formData[key], value: formData[key] }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [key]: selected?.value || "",
+                    }))
+                  }
+                  isClearable
+                />
+              ) : [
+                  "Fault in Date & Time",
+                  "Date & Time of Handover of fault",
+                  "Date & Time of fault clearance",
+                ].includes(key) ? (
+                <DatePicker
+                  selected={formData[key] ? new Date(formData[key]) : null}
+                  onChange={(date) => handleDateChange(key, date)}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  timeIntervals={15}
+                  dateFormat="dd/MM/yyyy HH:mm"
+                  placeholderText="Select date & time"
+                  className="form-control"
+                />
+              ) : (
+                <input
+                  type="text"
+                  name={key}
+                  value={formData[key] || ""}
+                  onChange={handleChange}
+                  disabled={key === "Fault durration (Hrs)"}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "5px",
+                    border: "1px solid #888",
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        <button onClick={handleSubmit} style={{ marginTop: "10px" }}>
+          {formData.rowNumber ? "Update" : "Add"} Fault
+        </button>
+      </div>
+
+      <h2>Fault Records</h2>
+      {loading ? (
+        <p>Loading faults...</p>
+      ) : faults.length === 0 ? (
+        <p>No faults found.</p>
+      ) : (
+        faults.map((row, index) => {
+          const status =
+            row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          const headerColor =
+            status === "restored"
+              ? "#2ecc71"
+              : status === "carried forward"
+              ? "#e74c3c"
+              : "#7f8c8d";
+
+          return (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                marginBottom: "15px",
+                overflow: "hidden",
+                backgroundColor: "#221e1eff",
+                color: "white",
+              }}
+            >
+              <div style={{ backgroundColor: headerColor, padding: "10px" }}>
+                <strong>
+                  {row["Route name as per Transnet (from Point A to B)"] ||
+                    "Unnamed Route"}
+                </strong>
+              </div>
+              <div style={{ padding: "10px" }}>
+                <p>
+                  <strong>Handover Time:</strong>{" "}
+                  {formatDateForDisplay(
+                    row["Date & Time of Handover of fault"]
+                  )}
+                </p>
+                <p>
+                  <strong>Fault Duration:</strong> {calculateFaultDuration(row)}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {row["Status of fault(carried forward/ restored)"]}
+                </p>
+                <p>
+                  <strong>FRT Worked:</strong> {row["FRT worked"]}
+                </p>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button onClick={() => handleEdit(index)}>Edit</button>
+                  <button onClick={() => handleDelete(row.rowNumber)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
