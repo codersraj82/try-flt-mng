@@ -26,11 +26,8 @@ const initialFormData = {
 };
 
 const apiUrl = "/.netlify/functions/fetchFaults";
-
-const formatDateTimeForSheet = (value) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return isNaN(date) ? "" : format(date, "dd/MM/yyyy HH:mm");
-};
+// const apiUrl =
+// "https://script.google.com/macros/s/AKfycbyP6Wh0bGGq2IF-b9jv5qT729Ii02zA6aoEfWaXOwqplkl373dkIOGvYg_1AN1kkeD0yQ/exec";
 
 function Faults() {
   const [faults, setFaults] = useState([]);
@@ -89,7 +86,8 @@ function Faults() {
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
 
-    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date(); // Use current time if not cleared
+
     const totalMinutes = differenceInMinutes(end, start);
     if (isNaN(totalMinutes)) return "Invalid";
 
@@ -114,7 +112,6 @@ function Faults() {
       [key]: date ? new Date(date).toISOString() : "",
     }));
   };
-
   useEffect(() => {
     const startRaw = formData["Date & Time of Handover of fault"]?.trim();
     const endRaw = formData["Date & Time of fault clearance"]?.trim();
@@ -172,24 +169,11 @@ function Faults() {
       return;
     }
 
-    const formattedData = {
-      ...formData,
-      "Fault in Date & Time": formatDateTimeForSheet(
-        formData["Fault in Date & Time"]
-      ),
-      "Date & Time of Handover of fault": formatDateTimeForSheet(
-        formData["Date & Time of Handover of fault"]
-      ),
-      "Date & Time of fault clearance": formatDateTimeForSheet(
-        formData["Date & Time of fault clearance"]
-      ),
-    };
-
     try {
       const response = await fetch("/.netlify/functions/submitFault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formattedData),
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();
@@ -200,7 +184,10 @@ function Faults() {
         return;
       }
 
-      setFaults((prev) => [...prev, formattedData]);
+      // Optionally add the new row to the UI immediately
+      setFaults((prev) => [...prev, formData]);
+
+      // Reset form after successful submission
       setFormData(initialFormData);
       setEditingIndex(null);
     } catch (error) {
