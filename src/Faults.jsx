@@ -292,7 +292,7 @@ function Faults() {
           return -1;
         if (aStatus !== "carried forward" && bStatus === "carried forward")
           return 1;
-        return bDate - aDate; // Newest first
+        return bDate - aDate; // Newest first hi
       });
 
       setFaults(filteredFaults);
@@ -379,6 +379,17 @@ function Faults() {
                   className="form-control"
                   wrapperClassName="date-picker-wrapper"
                 />
+              ) : key === "Status of fault(carried forward/ restored)" ? (
+                <select
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className="form-control"
+                >
+                  <option value="">Select status</option>
+                  <option value="carried forward">carried forward</option>
+                  <option value="restored">restored</option>
+                </select>
               ) : (
                 <input
                   type="text"
