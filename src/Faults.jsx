@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+implement in my Faults .jsx without changing logic::: import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -304,6 +304,38 @@ function Faults() {
     }
   };
 
+  const customSelectStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "#1e1e1e",
+      borderColor: "#555",
+      color: "#fff",
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: "#1e1e1e",
+      color: "#fff",
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused ? "#333" : "#1e1e1e",
+      color: "#fff",
+      cursor: "pointer",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#fff",
+    }),
+    input: (base) => ({
+      ...base,
+      color: "#fff",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#aaa",
+    }),
+  };
+
   return (
     <div style={{ marginTop: "40px", padding: "0 20px" }}>
       <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
@@ -317,6 +349,7 @@ function Faults() {
                 <Select
                   name={key}
                   classNamePrefix="react-select"
+                  styles={customSelectStyles}
                   options={routes.map((route) => ({
                     label: route[key],
                     value: route[key],
