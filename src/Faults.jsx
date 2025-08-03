@@ -273,9 +273,25 @@ function Faults() {
       const faultsData = await faultsRes.json();
       const routesData = await routesRes.json();
 
-      const filteredFaults = (
+      let filteredFaults = (
         Array.isArray(faultsData.data) ? faultsData.data : []
       ).filter((row) => REQUIRED_FIELDS.every((key) => row[key]));
+
+      // Apply sorting logic: carried forward first, then latest
+      filteredFaults.sort((a, b) => {
+        const aStatus =
+          a["Status of fault(carried forward/ restored)"]?.toLowerCase() || "";
+        const bStatus =
+          b["Status of fault(carried forward/ restored)"]?.toLowerCase() || "";
+        const aDate = new Date(a["Date & Time of Handover of fault"]);
+        const bDate = new Date(b["Date & Time of Handover of fault"]);
+
+        if (aStatus === "carried forward" && bStatus !== "carried forward")
+          return -1;
+        if (aStatus !== "carried forward" && bStatus === "carried forward")
+          return 1;
+        return bDate - aDate; // Newest first
+      });
 
       setFaults(filteredFaults);
       setRoutes(Array.isArray(routesData.data) ? routesData.data : []);
