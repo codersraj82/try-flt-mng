@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { format, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes, parse } from "date-fns";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -41,6 +41,7 @@ function Faults() {
           fetch(apiUrl),
           fetch(`${apiUrl}?type=routes`),
         ]);
+
         const faultsData = await faultsRes.json();
         const routesData = await routesRes.json();
 
@@ -84,8 +85,10 @@ function Faults() {
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
     const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+
     const minutes = differenceInMinutes(end, start);
     if (isNaN(minutes)) return "Invalid";
+
     const days = Math.floor(minutes / 1440);
     const hours = String(Math.floor((minutes % 1440) / 60)).padStart(2, "0");
     const mins = String(minutes % 60).padStart(2, "0");
@@ -99,21 +102,6 @@ function Faults() {
     } catch {
       return dateStr;
     }
-  };
-
-  const handleRouteSelect = (selectedOption) => {
-    const routeName = selectedOption?.value || "";
-    const matchedRoute = routes.find(
-      (r) => r["Route name as per Transnet (from Point A to B)"] === routeName
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      "Route name as per Transnet (from Point A to B)": routeName,
-      "Route ID (Transnet ID)": matchedRoute?.["Route ID (Transnet ID)"] || "",
-      "List of service down due to fault":
-        matchedRoute?.["List of service down due to fault"] || "",
-    }));
   };
 
   const handleSubmit = async () => {
@@ -160,6 +148,7 @@ function Faults() {
 
   const handleDelete = async (rowNumber) => {
     if (!window.confirm("Are you sure to delete this fault?")) return;
+
     try {
       const response = await fetch("/.netlify/functions/submitFault", {
         method: "POST",
@@ -168,6 +157,7 @@ function Faults() {
       });
 
       const result = await response.json();
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Delete failed on backend.");
       }
@@ -211,7 +201,12 @@ function Faults() {
                       ? { label: formData[key], value: formData[key] }
                       : null
                   }
-                  onChange={handleRouteSelect}
+                  onChange={(selectedOption) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [key]: selectedOption ? selectedOption.value : "",
+                    }))
+                  }
                   isClearable
                 />
               ) : [
@@ -242,10 +237,7 @@ function Faults() {
                     borderRadius: "5px",
                     border: "1px solid #888",
                   }}
-                  disabled={
-                    key === "Fault durration (Hrs)" ||
-                    key === "Route ID (Transnet ID)"
-                  }
+                  disabled={key === "Fault durration (Hrs)"}
                 />
               )}
             </div>
