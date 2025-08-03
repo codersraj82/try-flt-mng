@@ -350,10 +350,13 @@ function Faults() {
                   name={key}
                   classNamePrefix="react-select"
                   styles={customSelectStyles}
-                  options={routes.map((route) => ({
-                    label: route[key],
-                    value: route[key],
-                  }))}
+                  options={Array.from(
+                    new Map(
+                      routes
+                        .filter((r) => r[key] && r[key].trim()) // remove empty or undefined
+                        .map((r) => [r[key], { label: r[key], value: r[key] }]) // de-duplicate
+                    ).values()
+                  )}
                   value={
                     formData[key]
                       ? { label: formData[key], value: formData[key] }
