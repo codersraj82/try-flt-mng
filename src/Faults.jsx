@@ -41,12 +41,32 @@ function Faults() {
           fetch(apiUrl),
           fetch(`${apiUrl}?type=routes`),
         ]);
+
         const faultsData = await faultsRes.json();
         const routesData = await routesRes.json();
 
         const filteredFaults = (
           Array.isArray(faultsData.data) ? faultsData.data : []
         ).filter((row) => REQUIRED_FIELDS.every((key) => row[key]));
+
+        // ✅ Sort faults:
+        // 1. "carried forward" status first
+        // 2. Then by latest "Fault in Date & Time"
+        filteredFaults.sort((a, b) => {
+          const statusA =
+            a["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          const statusB =
+            b["Status of fault(carried forward/ restored)"]?.toLowerCase();
+
+          if (statusA === "carried forward" && statusB !== "carried forward")
+            return -1;
+          if (statusA !== "carried forward" && statusB === "carried forward")
+            return 1;
+
+          const dateA = new Date(a["Fault in Date & Time"]);
+          const dateB = new Date(b["Fault in Date & Time"]);
+          return dateB - dateA; // descending: latest first
+        });
 
         setFaults(filteredFaults);
         setRoutes(Array.isArray(routesData.data) ? routesData.data : []);
@@ -116,6 +136,42 @@ function Faults() {
     }));
   };
 
+  // const handleSubmit = async () => {
+  //   if (!REQUIRED_FIELDS.every((key) => formData[key]?.trim())) {
+  //     alert("Please fill all required fields.");
+  //     return;
+  //   }
+
+  //   const payload = {
+  //     ...formData,
+  //     "Fault in Date & Time": formatForSheet(formData["Fault in Date & Time"]),
+  //     "Date & Time of Handover of fault": formatForSheet(
+  //       formData["Date & Time of Handover of fault"]
+  //     ),
+  //     "Date & Time of fault clearance": formatForSheet(
+  //       formData["Date & Time of fault clearance"]
+  //     ),
+  //   };
+
+  //   try {
+  //     const response = await fetch("/.netlify/functions/submitFault", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(payload),
+  //     });
+
+  //     const result = await response.json();
+  //     if (!response.ok || !result.success) throw new Error(result.error);
+
+  //     setFaults((prev) => [...prev, payload]);
+  //     setFormData(initialFormData);
+  //     setEditingIndex(null);
+  //   } catch (error) {
+  //     console.error("Error submitting fault:", error);
+  //     alert("Failed to submit fault.");
+  //   }
+  // };
+
   const handleSubmit = async () => {
     if (!REQUIRED_FIELDS.every((key) => formData[key]?.trim())) {
       alert("Please fill all required fields.");
@@ -143,7 +199,34 @@ function Faults() {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error);
 
-      setFaults((prev) => [...prev, payload]);
+      const updatedFaults = [...faults];
+
+      if (editingIndex !== null) {
+        // Replace the existing record
+        updatedFaults[editingIndex] = payload;
+      } else {
+        // Add new record
+        updatedFaults.push(payload);
+      }
+
+      // ✅ Sort the updated list
+      updatedFaults.sort((a, b) => {
+        const statusA =
+          a["Status of fault(carried forward/ restored)"]?.toLowerCase();
+        const statusB =
+          b["Status of fault(carried forward/ restored)"]?.toLowerCase();
+
+        if (statusA === "carried forward" && statusB !== "carried forward")
+          return -1;
+        if (statusA !== "carried forward" && statusB === "carried forward")
+          return 1;
+
+        const dateA = new Date(a["Fault in Date & Time"]);
+        const dateB = new Date(b["Fault in Date & Time"]);
+        return dateB - dateA;
+      });
+
+      setFaults(updatedFaults);
       setFormData(initialFormData);
       setEditingIndex(null);
     } catch (error) {
