@@ -3,6 +3,7 @@ import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, differenceInMinutes, parseISO } from "date-fns";
+import { parse } from "date-fns";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -66,8 +67,8 @@ function Faults() {
 
   const formatDateForDisplay = (dateStr) => {
     if (!dateStr) return "N/A";
-    const date = new Date(dateStr);
-    return format(date, "dd/MM/yyyy HH:mm");
+    const parsed = parse(dateStr, "dd/MM/yyyy HH:mm", new Date());
+    return isNaN(parsed) ? dateStr : format(parsed, "dd/MM/yyyy HH:mm");
   };
 
   const formatDateForSheet = (dateStr) => {
@@ -76,11 +77,20 @@ function Faults() {
   };
 
   const calculateFaultDuration = (row) => {
-    const start = new Date(row["Date & Time of Handover of fault"]);
+    const start = parse(
+      row["Date & Time of Handover of fault"],
+      "dd/MM/yyyy HH:mm",
+      new Date()
+    );
     const endRaw = row["Date & Time of fault clearance"];
+    const end =
+      status === "restored" && endRaw
+        ? parse(endRaw, "dd/MM/yyyy HH:mm", new Date())
+        : new Date();
+
     const status =
       row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-    const end = status === "restored" && endRaw ? new Date(endRaw) : new Date();
+
     const minutes = differenceInMinutes(end, start);
     const days = Math.floor(minutes / 1440);
     const hours = String(Math.floor((minutes % 1440) / 60)).padStart(2, "0");
