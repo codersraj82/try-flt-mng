@@ -124,6 +124,7 @@ function Faults() {
 
   const handleRouteSelect = (selectedOption) => {
     const routeName = selectedOption?.value || "";
+
     const matchedRoute = routes.find(
       (r) => r["Route name as per Transnet (from Point A to B)"] === routeName
     );
@@ -131,9 +132,9 @@ function Faults() {
     setFormData((prev) => ({
       ...prev,
       "Route name as per Transnet (from Point A to B)": routeName,
-      "Route ID (Transnet ID)": matchedRoute?.["Route ID (Transnet ID)"] || "",
+      "Route ID (Transnet ID)": matchedRoute?.["Route ID"] || "",
       "List of service down due to fault":
-        matchedRoute?.["List of service down due to fault"] || "",
+        matchedRoute?.["Services working"] || "",
     }));
   };
 
