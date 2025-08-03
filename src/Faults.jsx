@@ -150,15 +150,22 @@ function Faults() {
     if (!window.confirm("Are you sure to delete this fault?")) return;
 
     try {
-      await fetch(apiUrl, {
+      const response = await fetch("/.netlify/functions/submitFault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rowNumber, action: "delete" }),
       });
 
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Delete failed on backend.");
+      }
+
       setFaults((prev) => prev.filter((row) => row.rowNumber !== rowNumber));
     } catch (error) {
       console.error("Delete failed", error);
+      alert("Failed to delete the fault from Google Sheet.");
     }
   };
 
