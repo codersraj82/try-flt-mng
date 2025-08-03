@@ -23,6 +23,7 @@ const initialFormData = {
   "Status of fault(carried forward/ restored)": "",
   "Initial assesment (brief details of the issue)": "",
   "List of service down due to fault": "",
+  "Remark if any": "",
   "FRT worked": "",
 };
 
@@ -180,14 +181,21 @@ function Faults() {
       return;
     }
 
+    const {
+      ["Fault durration (Hrs)"]: _, // exclude from payload
+      ...cleanedFormData
+    } = formData;
+
     const payload = {
-      ...formData,
-      "Fault in Date & Time": formatForSheet(formData["Fault in Date & Time"]),
+      ...cleanedFormData,
+      "Fault in Date & Time": formatForSheet(
+        cleanedFormData["Fault in Date & Time"]
+      ),
       "Date & Time of Handover of fault": formatForSheet(
-        formData["Date & Time of Handover of fault"]
+        cleanedFormData["Date & Time of Handover of fault"]
       ),
       "Date & Time of fault clearance": formatForSheet(
-        formData["Date & Time of fault clearance"]
+        cleanedFormData["Date & Time of fault clearance"]
       ),
     };
 
@@ -387,8 +395,20 @@ function Faults() {
                   className="form-control"
                 >
                   <option value="">Select status</option>
-                  <option value="carried forward">carried forward</option>
+                  <option value="carried forwarded">carried forwarded</option>
                   <option value="restored">restored</option>
+                </select>
+              ) : key === "FRT worked" ? (
+                <select
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className="form-control"
+                >
+                  <option value="">Select FRT</option>
+                  <option value="FRT-1 Lohar">FRT-1 Lohar</option>
+                  <option value="FRT-2 Mujjim">FRT-2 Mujjim</option>
+                  <option value="FRT-3 Maruti">FRT-3 Maruti</option>
                 </select>
               ) : (
                 <input
