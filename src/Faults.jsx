@@ -262,6 +262,31 @@ function Faults() {
     }
   };
 
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [faultsRes, routesRes] = await Promise.all([
+        fetch(apiUrl),
+        fetch(`${apiUrl}?type=routes`),
+      ]);
+
+      const faultsData = await faultsRes.json();
+      const routesData = await routesRes.json();
+
+      const filteredFaults = (
+        Array.isArray(faultsData.data) ? faultsData.data : []
+      ).filter((row) => REQUIRED_FIELDS.every((key) => row[key]));
+
+      setFaults(filteredFaults);
+      setRoutes(Array.isArray(routesData.data) ? routesData.data : []);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      alert("Failed to refresh data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ marginTop: "40px", padding: "0 20px" }}>
       <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
@@ -400,6 +425,27 @@ function Faults() {
           );
         })
       )}
+      <button
+        onClick={refreshData}
+        title="Refresh Data"
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          backgroundColor: "#3498db",
+          color: "white",
+          border: "none",
+          borderRadius: "50%",
+          width: "40px",
+          height: "40px",
+          fontSize: "18px",
+          cursor: "pointer",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+          zIndex: 9999,
+        }}
+      >
+        ⟳
+      </button>
     </div>
   );
 }
