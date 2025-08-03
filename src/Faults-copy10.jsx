@@ -3,7 +3,6 @@ import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, differenceInMinutes } from "date-fns";
-import "./FaultForm.css";
 
 const REQUIRED_FIELDS = [
   "Route name as per Transnet (from Point A to B)",
@@ -307,16 +306,26 @@ function Faults() {
   return (
     <div style={{ marginTop: "40px", padding: "0 20px" }}>
       <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
-      <div className="fault-form-container">
+      <div
+        style={{
+          backgroundColor: "#222",
+          padding: "15px",
+          borderRadius: "10px",
+          color: "white",
+          marginBottom: "20px",
+        }}
+      >
         {Object.keys(initialFormData)
           .filter((key) => key !== "rowNumber")
           .map((key) => (
-            <div key={key} className="fault-form-group">
-              <label>{key}</label>
+            <div key={key} style={{ marginBottom: "10px" }}>
+              <label>
+                <strong>{key}</strong>
+              </label>
+              <br />
               {key === "Route name as per Transnet (from Point A to B)" ? (
                 <Select
                   name={key}
-                  classNamePrefix="react-select"
                   options={routes.map((route) => ({
                     label: route[key],
                     value: route[key],
@@ -351,6 +360,12 @@ function Faults() {
                   name={key}
                   value={formData[key] || ""}
                   onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "5px",
+                    border: "1px solid #888",
+                  }}
                   disabled={
                     key === "Fault durration (Hrs)" ||
                     key === "Route ID (Transnet ID)"
@@ -359,7 +374,7 @@ function Faults() {
               )}
             </div>
           ))}
-        <button onClick={handleSubmit} className="fault-form-button">
+        <button onClick={handleSubmit} style={{ marginTop: "10px" }}>
           {formData.rowNumber ? "Update" : "Add"} Fault
         </button>
       </div>

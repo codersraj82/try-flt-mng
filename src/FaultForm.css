@@ -1,0 +1,66 @@
+/* FaultForm.css */
+
+.fault-form-container {
+  background-color: #2c2c2c;
+  padding: 20px;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 900px;
+  margin: 0 auto 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.fault-form-group {
+  margin-bottom: 18px;
+}
+
+.fault-form-group label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+  color: #e0e0e0;
+}
+
+.fault-form-group input,
+.fault-form-group .form-control,
+.fault-form-group .date-picker-wrapper input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #666;
+  background-color: #1e1e1e;
+  color: #fff;
+  font-size: 15px;
+}
+
+.fault-form-group input:disabled {
+  background-color: #444;
+  color: #bbb;
+}
+
+.fault-form-button {
+  background-color: #27ae60;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s ease;
+}
+
+.fault-form-button:hover {
+  background-color: #219150;
+}
+
+.react-select__control {
+  background-color: #1e1e1e !important;
+  color: #fff;
+  border: 1px solid #666 !important;
+}
+
+.react-select__single-value {
+  color: #fff !important;
+}
