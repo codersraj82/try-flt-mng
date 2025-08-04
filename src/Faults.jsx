@@ -31,9 +31,6 @@ const apiUrl = "/.netlify/functions/fetchFaults";
 
 // ⬆️ Your imports and constants remain the same...
 
-// ⬆️ Your imports and constants remain the same...
-// ⬆️ Your imports and constants remain the same...
-
 function Faults() {
   const [faults, setFaults] = useState([]);
   const [routes, setRoutes] = useState([]);
