@@ -303,6 +303,83 @@ function Faults() {
           <div className="fault-form-container">
             {/* ... your existing form inputs unchanged ... */}
             {/* inside your form loop and buttons remain as-is */}
+            {Object.keys(initialFormData)
+              .filter((key) => key !== "rowNumber")
+              .map((key) => (
+                <div key={key} className="fault-form-group">
+                  <label>{key}</label>
+                  {key === "Route name as per Transnet (from Point A to B)" ? (
+                    <Select
+                      name={key}
+                      classNamePrefix="react-select"
+                      styles={customSelectStyles}
+                      options={routes.map((route) => ({
+                        label: route[key],
+                        value: route[key],
+                      }))}
+                      value={
+                        formData[key]
+                          ? { label: formData[key], value: formData[key] }
+                          : null
+                      }
+                      onChange={handleRouteSelect}
+                      isClearable
+                    />
+                  ) : [
+                      "Fault in Date & Time",
+                      "Date & Time of Handover of fault",
+                      "Date & Time of fault clearance",
+                    ].includes(key) ? (
+                    <DatePicker
+                      selected={formData[key] ? new Date(formData[key]) : null}
+                      onChange={(date) => handleDateChange(key, date)}
+                      showTimeSelect
+                      timeFormat="HH:mm"
+                      timeIntervals={15}
+                      dateFormat="dd/MM/yyyy HH:mm"
+                      placeholderText="Select date & time"
+                      className="form-control"
+                      wrapperClassName="date-picker-wrapper"
+                    />
+                  ) : key === "Status of fault(carried forward/ restored)" ? (
+                    <select
+                      name={key}
+                      value={formData[key]}
+                      onChange={handleChange}
+                      className="form-control"
+                    >
+                      <option value="">Select status</option>
+                      <option value="carried forwarded">
+                        carried forwarded
+                      </option>
+                      <option value="restored">restored</option>
+                    </select>
+                  ) : key === "FRT worked" ? (
+                    <select
+                      name={key}
+                      value={formData[key]}
+                      onChange={handleChange}
+                      className="form-control"
+                    >
+                      <option value="">Select FRT</option>
+                      <option value="FRT-1 Lohar">FRT-1 Lohar</option>
+                      <option value="FRT-2 Mujjim">FRT-2 Mujjim</option>
+                      <option value="FRT-3 Maruti">FRT-3 Maruti</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      name={key}
+                      value={formData[key] || ""}
+                      onChange={handleChange}
+                      disabled={
+                        key === "Fault durration (Hrs)" ||
+                        key === "Route ID (Transnet ID)"
+                      }
+                    />
+                  )}
+                </div>
+              ))}
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={handleSubmit} className="fault-form-button">
                 {formData.rowNumber ? "Update" : "Add"} Fault
