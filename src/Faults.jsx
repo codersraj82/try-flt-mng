@@ -299,6 +299,7 @@ function Faults() {
 
       {showForm && (
         <>
+          {/* hi */}
           <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
           <div className="fault-form-container">
             {/* ... your existing form inputs unchanged ... */}
