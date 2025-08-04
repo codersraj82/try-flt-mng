@@ -424,9 +424,21 @@ function Faults() {
               )}
             </div>
           ))}
-        <button onClick={handleSubmit} className="fault-form-button">
-          {formData.rowNumber ? "Update" : "Add"} Fault
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={handleSubmit} className="fault-form-button">
+            {formData.rowNumber ? "Update" : "Add"} Fault
+          </button>
+          <button
+            onClick={() => {
+              setFormData(initialFormData);
+              setEditingIndex(null);
+            }}
+            className="fault-form-button"
+            style={{ backgroundColor: "#888" }}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
 
       <h2>Fault Records</h2>
