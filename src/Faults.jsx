@@ -308,7 +308,12 @@ function Faults() {
               .filter((key) => key !== "rowNumber")
               .map((key) => (
                 <div key={key} className="fault-form-group">
-                  <label>{key}</label>
+                  <label>
+                    {REQUIRED_FIELDS.includes(key) && (
+                      <span style={{ color: "red" }}>*</span>
+                    )}{" "}
+                    {key}
+                  </label>
                   {key === "Route name as per Transnet (from Point A to B)" ? (
                     <Select
                       name={key}
