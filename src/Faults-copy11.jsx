@@ -35,7 +35,6 @@ function Faults() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialFormData);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -140,10 +139,45 @@ function Faults() {
     }));
   };
 
+  // const handleSubmit = async () => {
+  //   if (!REQUIRED_FIELDS.every((key) => formData[key]?.trim())) {
+  //     alert("Please fill all required fields.");
+  //     return;
+  //   }
+
+  //   const payload = {
+  //     ...formData,
+  //     "Fault in Date & Time": formatForSheet(formData["Fault in Date & Time"]),
+  //     "Date & Time of Handover of fault": formatForSheet(
+  //       formData["Date & Time of Handover of fault"]
+  //     ),
+  //     "Date & Time of fault clearance": formatForSheet(
+  //       formData["Date & Time of fault clearance"]
+  //     ),
+  //   };
+
+  //   try {
+  //     const response = await fetch("/.netlify/functions/submitFault", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(payload),
+  //     });
+
+  //     const result = await response.json();
+  //     if (!response.ok || !result.success) throw new Error(result.error);
+
+  //     setFaults((prev) => [...prev, payload]);
+  //     setFormData(initialFormData);
+  //     setEditingIndex(null);
+  //   } catch (error) {
+  //     console.error("Error submitting fault:", error);
+  //     alert("Failed to submit fault.");
+  //   }
+  // };
+
   const handleSubmit = async () => {
     if (!REQUIRED_FIELDS.every((key) => formData[key]?.trim())) {
       alert("Please fill all required fields.");
-      setShowForm(false);
       return;
     }
 
@@ -214,7 +248,6 @@ function Faults() {
   const handleEdit = (index) => {
     setFormData({ ...faults[index] });
     setEditingIndex(index);
-    setShowForm(true); // Show the form
     window.scrollTo(0, 0);
   };
 
@@ -315,53 +348,98 @@ function Faults() {
   return (
     <div style={{ marginTop: "40px", padding: "0 20px" }}>
       <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
-      {showForm ? (
-        <>
-          <h2>{formData.rowNumber ? "Edit Fault" : "Add Fault"}</h2>
-          <div className="fault-form-container">
-            {/* existing form JSX (map over initialFormData) stays unchanged */}
-            {Object.keys(initialFormData)
-              .filter((key) => key !== "rowNumber")
-              .map((key) => (
-                <div key={key} className="fault-form-group">
-                  {/* leave this section unchanged – your custom input/Select logic is preserved */}
-                </div>
-              ))}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={handleSubmit} className="fault-form-button">
-                {formData.rowNumber ? "Update" : "Add"} Fault
-              </button>
-              <button
-                onClick={() => {
-                  setFormData(initialFormData);
-                  setEditingIndex(null);
-                  setShowForm(false); // Hides form
-                }}
-                className="fault-form-button"
-                style={{ backgroundColor: "#888" }}
-              >
-                Cancel
-              </button>
+      <div className="fault-form-container">
+        {Object.keys(initialFormData)
+          .filter((key) => key !== "rowNumber")
+          .map((key) => (
+            <div key={key} className="fault-form-group">
+              <label>{key}</label>
+              {key === "Route name as per Transnet (from Point A to B)" ? (
+                <Select
+                  name={key}
+                  classNamePrefix="react-select"
+                  styles={customSelectStyles}
+                  options={routes.map((route) => ({
+                    label: route[key],
+                    value: route[key],
+                  }))}
+                  value={
+                    formData[key]
+                      ? { label: formData[key], value: formData[key] }
+                      : null
+                  }
+                  onChange={handleRouteSelect}
+                  isClearable
+                />
+              ) : [
+                  "Fault in Date & Time",
+                  "Date & Time of Handover of fault",
+                  "Date & Time of fault clearance",
+                ].includes(key) ? (
+                <DatePicker
+                  selected={formData[key] ? new Date(formData[key]) : null}
+                  onChange={(date) => handleDateChange(key, date)}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  timeIntervals={15}
+                  dateFormat="dd/MM/yyyy HH:mm"
+                  placeholderText="Select date & time"
+                  className="form-control"
+                  wrapperClassName="date-picker-wrapper"
+                />
+              ) : key === "Status of fault(carried forward/ restored)" ? (
+                <select
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className="form-control"
+                >
+                  <option value="">Select status</option>
+                  <option value="carried forwarded">carried forwarded</option>
+                  <option value="restored">restored</option>
+                </select>
+              ) : key === "FRT worked" ? (
+                <select
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className="form-control"
+                >
+                  <option value="">Select FRT</option>
+                  <option value="FRT-1 Lohar">FRT-1 Lohar</option>
+                  <option value="FRT-2 Mujjim">FRT-2 Mujjim</option>
+                  <option value="FRT-3 Maruti">FRT-3 Maruti</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name={key}
+                  value={formData[key] || ""}
+                  onChange={handleChange}
+                  disabled={
+                    key === "Fault durration (Hrs)" ||
+                    key === "Route ID (Transnet ID)"
+                  }
+                />
+              )}
             </div>
-          </div>
-        </>
-      ) : (
-        <button
-          onClick={() => {
-            setFormData(initialFormData);
-            setEditingIndex(null);
-            setShowForm(true); // Show form
-          }}
-          style={{
-            marginBottom: "20px",
-            padding: "10px 20px",
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
-        >
-          ➕ Add Fault
-        </button>
-      )}
+          ))}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={handleSubmit} className="fault-form-button">
+            {formData.rowNumber ? "Update" : "Add"} Fault
+          </button>
+          <button
+            onClick={() => {
+              setFormData(initialFormData);
+              setEditingIndex(null);
+            }}
+            className="fault-form-button"
+            style={{ backgroundColor: "#888" }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
 
       <h2>Fault Records</h2>
       {loading ? (
