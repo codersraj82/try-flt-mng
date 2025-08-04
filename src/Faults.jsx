@@ -324,7 +324,88 @@ function Faults() {
       )}
 
       <h2>Fault Records</h2>
-      {/* ... your card rendering and refresh button stay unchanged ... */}
+      {loading ? (
+        <p>Loading faults...</p>
+      ) : !faults.length ? (
+        <p>No faults found.</p>
+      ) : (
+        faults.map((row, index) => {
+          const status =
+            row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          const headerColor =
+            status === "restored"
+              ? "#2ecc71"
+              : status === "carried forward"
+              ? "#e74c3c"
+              : "#7f8c8d";
+
+          return (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                marginBottom: "15px",
+                overflow: "hidden",
+                backgroundColor: "#221e1eff",
+                color: "white",
+              }}
+            >
+              <div style={{ backgroundColor: headerColor, padding: "10px" }}>
+                <strong>
+                  {row["Route name as per Transnet (from Point A to B)"] ||
+                    "Unnamed Route"}
+                </strong>
+              </div>
+              <div style={{ padding: "10px" }}>
+                <p>
+                  <strong>Handover Time:</strong>{" "}
+                  {formatDate(row["Date & Time of Handover of fault"])}
+                </p>
+                <p>
+                  <strong>Fault Duration:</strong> {calculateFaultDuration(row)}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {row["Status of fault(carried forward/ restored)"]}
+                </p>
+                <p>
+                  <strong>FRT Worked:</strong> {row["FRT worked"]}
+                </p>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button onClick={() => handleEdit(index)}>Edit</button>
+                  <button onClick={() => handleDelete(row.rowNumber)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
+      <button
+        onClick={refreshData}
+        title="Refresh Data"
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          backgroundColor: "#3498db",
+          color: "white",
+          border: "none",
+          borderRadius: "50%",
+          width: "40px",
+          height: "40px",
+          fontSize: "18px",
+          cursor: "pointer",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+          zIndex: 9999,
+        }}
+      >
+        ⟳
+      </button>
     </div>
   );
 }
