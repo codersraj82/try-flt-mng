@@ -4,7 +4,7 @@ import Login from "./Login";
 function App() {
   return (
     <div>
-      <h1 style={{ textAlign: "center" }}>Google Login Demo</h1>
+      <h2 style={{ textAlign: "center" }}>BSNL PPR-TX</h2>
       <Login />
     </div>
   );
