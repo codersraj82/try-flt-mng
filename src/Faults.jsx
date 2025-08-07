@@ -411,7 +411,7 @@ function Faults() {
         <label style={{ marginRight: "10px", fontWeight: "bold" }}>
           Filter Status:
         </label>
-        {["all", "carried forward", "restored"].map((status) => (
+        {["all", "carried forwarded", "restored"].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
@@ -474,6 +474,9 @@ function Faults() {
                   </strong>
                 </div>
                 <div style={{ padding: "10px" }}>
+                  <p>
+                    <strong>Docket no:</strong> {row["Transnet DOCKET NO"]}
+                  </p>
                   <p>
                     <strong>Handover Time:</strong>{" "}
                     {formatDate(row["Date & Time of Handover of fault"])}
