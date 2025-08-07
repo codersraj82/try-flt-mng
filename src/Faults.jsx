@@ -455,6 +455,10 @@ function Faults() {
                 <p>
                   <strong>FRT Worked:</strong> {row["FRT worked"]}
                 </p>
+                <p>
+                  <strong>Services Down:</strong>{" "}
+                  {row["List of service down due to fault"]}
+                </p>
                 <div
                   style={{ display: "flex", gap: "10px", marginTop: "10px" }}
                 >
