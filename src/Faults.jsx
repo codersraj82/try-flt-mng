@@ -481,8 +481,12 @@ function Faults() {
                 </div>
                 <div style={{ padding: "10px" }}>
                   <p>
-                    <strong>Docket no:</strong> {row["Transnet DOCKET NO"]}
+                    <strong>Docket no:</strong>{" "}
+                    {String(row["Transnet DOCKET NO"] || "").trim() || (
+                      <span style={{ color: "#fff" }}>N/A</span>
+                    )}
                   </p>
+
                   <p>
                     <strong>Handover Time:</strong>{" "}
                     {formatDate(row["Date & Time of Handover of fault"])}
