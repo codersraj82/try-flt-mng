@@ -60,9 +60,15 @@ function Faults() {
           const statusB =
             b["Status of fault(carried forward/ restored)"]?.toLowerCase();
 
-          if (statusA === "carried forward" && statusB !== "carried forward")
+          if (
+            statusA === "carried forwarded" &&
+            statusB !== "carried forwarded"
+          )
             return -1;
-          if (statusA !== "carried forward" && statusB === "carried forward")
+          if (
+            statusA !== "carried forwarded" &&
+            statusB === "carried forwarded"
+          )
             return 1;
 
           const dateA = new Date(a["Fault in Date & Time"]);
@@ -177,9 +183,9 @@ function Faults() {
           a["Status of fault(carried forward/ restored)"]?.toLowerCase();
         const statusB =
           b["Status of fault(carried forward/ restored)"]?.toLowerCase();
-        if (statusA === "carried forward" && statusB !== "carried forward")
+        if (statusA === "carried forwarded" && statusB !== "carried forwarded")
           return -1;
-        if (statusA !== "carried forward" && statusB === "carried forward")
+        if (statusA !== "carried forwarded" && statusB === "carried forwarded")
           return 1;
         const dateA = new Date(a["Fault in Date & Time"]);
         const dateB = new Date(b["Fault in Date & Time"]);
