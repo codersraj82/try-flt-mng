@@ -37,7 +37,6 @@ function Faults() {
   const [formData, setFormData] = useState(initialFormData);
   const [editingIndex, setEditingIndex] = useState(null);
   const [showForm, setShowForm] = useState(false); // ✅ NEW
-  const [statusFilter, setStatusFilter] = useState("all"); // all | restored | carried
 
   useEffect(() => {
     async function fetchData() {
@@ -243,9 +242,9 @@ function Faults() {
           b["Status of fault(carried forward/ restored)"]?.toLowerCase() || "";
         const aDate = new Date(a["Date & Time of Handover of fault"]);
         const bDate = new Date(b["Date & Time of Handover of fault"]);
-        if (aStatus === "carried forwarded" && bStatus !== "carried forwarded")
+        if (aStatus === "carried forward" && bStatus !== "carried forward")
           return -1;
-        if (aStatus !== "carried forwarded" && bStatus === "carried forwarded")
+        if (aStatus !== "carried forward" && bStatus === "carried forward")
           return 1;
         return bDate - aDate;
       });
@@ -407,104 +406,71 @@ function Faults() {
         </>
       )}
 
-      <div style={{ marginBottom: "15px" }}>
-        <label style={{ marginRight: "10px", fontWeight: "bold" }}>
-          Filter Status:
-        </label>
-        {["all", "carried forward", "restored"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            style={{
-              marginRight: "10px",
-              padding: "6px 12px",
-              backgroundColor: statusFilter === status ? "#3498db" : "#ccc",
-              color: statusFilter === status ? "#fff" : "#000",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            {status === "all"
-              ? "All"
-              : status.charAt(0).toUpperCase() + status.slice(1)}
-          </button>
-        ))}
-      </div>
-
       <h2>Fault Records</h2>
       {loading ? (
         <p>Loading faults...</p>
       ) : !faults.length ? (
         <p>No faults found.</p>
       ) : (
-        faults
-          .filter((row) => {
-            const status =
-              row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-            if (statusFilter === "all") return true;
-            return status === statusFilter;
-          })
-          .map((row, index) => {
-            const status =
-              row["Status of fault(carried forward/ restored)"]?.toLowerCase();
-            const headerColor =
-              status === "restored"
-                ? "#2ecc71"
-                : status === "carried forwarded"
-                ? "#e74c3c"
-                : "#7f8c8d";
+        faults.map((row, index) => {
+          const status =
+            row["Status of fault(carried forward/ restored)"]?.toLowerCase();
+          const headerColor =
+            status === "restored"
+              ? "#2ecc71"
+              : status === "carried forward"
+              ? "#e74c3c"
+              : "#7f8c8d";
 
-            return (
-              <div
-                key={index}
-                style={{
-                  border: "1px solid #ccc",
-                  borderRadius: "8px",
-                  marginBottom: "15px",
-                  overflow: "hidden",
-                  backgroundColor: "#221e1eff",
-                  color: "white",
-                }}
-              >
-                <div style={{ backgroundColor: headerColor, padding: "10px" }}>
-                  <strong>
-                    {row["Route name as per Transnet (from Point A to B)"] ||
-                      "Unnamed Route"}
-                  </strong>
-                </div>
-                <div style={{ padding: "10px" }}>
-                  <p>
-                    <strong>Handover Time:</strong>{" "}
-                    {formatDate(row["Date & Time of Handover of fault"])}
-                  </p>
-                  <p>
-                    <strong>Fault Duration:</strong>{" "}
-                    {calculateFaultDuration(row)}
-                  </p>
-                  <p>
-                    <strong>Status:</strong>{" "}
-                    {row["Status of fault(carried forward/ restored)"]}
-                  </p>
-                  <p>
-                    <strong>FRT Worked:</strong> {row["FRT worked"]}
-                  </p>
-                  <p>
-                    <strong>Services Down:</strong>{" "}
-                    {row["List of service down due to fault"]}
-                  </p>
-                  <div
-                    style={{ display: "flex", gap: "10px", marginTop: "10px" }}
-                  >
-                    <button onClick={() => handleEdit(index)}>Edit</button>
-                    <button onClick={() => handleDelete(row.rowNumber)}>
-                      Delete
-                    </button>
-                  </div>
+          return (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                marginBottom: "15px",
+                overflow: "hidden",
+                backgroundColor: "#221e1eff",
+                color: "white",
+              }}
+            >
+              <div style={{ backgroundColor: headerColor, padding: "10px" }}>
+                <strong>
+                  {row["Route name as per Transnet (from Point A to B)"] ||
+                    "Unnamed Route"}
+                </strong>
+              </div>
+              <div style={{ padding: "10px" }}>
+                <p>
+                  <strong>Handover Time:</strong>{" "}
+                  {formatDate(row["Date & Time of Handover of fault"])}
+                </p>
+                <p>
+                  <strong>Fault Duration:</strong> {calculateFaultDuration(row)}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {row["Status of fault(carried forward/ restored)"]}
+                </p>
+                <p>
+                  <strong>FRT Worked:</strong> {row["FRT worked"]}
+                </p>
+                <p>
+                  <strong>Services Down:</strong>{" "}
+                  {row["List of service down due to fault"]}
+                </p>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "10px" }}
+                >
+                  <button onClick={() => handleEdit(index)}>Edit</button>
+                  <button onClick={() => handleDelete(row.rowNumber)}>
+                    Delete
+                  </button>
                 </div>
               </div>
-            );
-          })
+            </div>
+          );
+        })
       )}
       <button
         onClick={refreshData}
